@@ -119,6 +119,144 @@ use soroban_sdk::{
     symbol_short, token::TokenClient, Address, Bytes, BytesN, Env, String, Symbol, Vec,
 };
 
+struct PerInvestorStorage<'a> {
+    env: &'a Env,
+}
+
+impl<'a> PerInvestorStorage<'a> {
+    fn new(env: &'a Env) -> Self {
+        Self { env }
+    }
+
+    fn get_contribution(&self, investor: Address) -> i128 {
+        self.env
+            .storage()
+            .persistent()
+            .get(&DataKey::InvestorContribution(investor))
+            .unwrap_or(0)
+    }
+
+    fn set_contribution(&self, investor: Address, amount: i128) {
+        self.env
+            .storage()
+            .persistent()
+            .set(&DataKey::InvestorContribution(investor), &amount);
+    }
+
+    fn get_effective_yield(&self, investor: Address) -> Option<i64> {
+        self.env
+            .storage()
+            .persistent()
+            .get(&DataKey::InvestorEffectiveYield(investor))
+    }
+
+    fn set_effective_yield(&self, investor: Address, value: i64) {
+        self.env
+            .storage()
+            .persistent()
+            .set(&DataKey::InvestorEffectiveYield(investor), &value);
+    }
+
+    fn get_claim_not_before(&self, investor: Address) -> u64 {
+        self.env
+            .storage()
+            .persistent()
+            .get(&DataKey::InvestorClaimNotBefore(investor))
+            .unwrap_or(0)
+    }
+
+    fn set_claim_not_before(&self, investor: Address, value: u64) {
+        self.env
+            .storage()
+            .persistent()
+            .set(&DataKey::InvestorClaimNotBefore(investor), &value);
+    }
+
+    fn get_lock_in_until(&self, investor: Address) -> u64 {
+        self.env
+            .storage()
+            .persistent()
+            .get(&DataKey::InvestorLockInUntil(investor))
+            .unwrap_or(0)
+    }
+
+    fn set_lock_in_until(&self, investor: Address, value: u64) {
+        self.env
+            .storage()
+            .persistent()
+            .set(&DataKey::InvestorLockInUntil(investor), &value);
+    }
+
+    fn get_claimed(&self, investor: Address) -> bool {
+        self.env
+            .storage()
+            .persistent()
+            .get(&DataKey::InvestorClaimed(investor))
+            .unwrap_or(false)
+    }
+
+    fn set_claimed(&self, investor: Address, value: bool) {
+        self.env
+            .storage()
+            .persistent()
+            .set(&DataKey::InvestorClaimed(investor), &value);
+    }
+
+    fn get_allowlisted(&self, investor: Address) -> bool {
+        self.env
+            .storage()
+            .persistent()
+            .get(&DataKey::InvestorAllowlisted(investor))
+            .unwrap_or(false)
+    }
+
+    fn set_allowlisted(&self, investor: Address, allowed: bool) {
+        self.env
+            .storage()
+            .persistent()
+            .set(&DataKey::InvestorAllowlisted(investor), &allowed);
+    }
+
+    fn get_yield_claim_delegate(&self, investor: Address) -> Option<Address> {
+        self.env
+            .storage()
+            .persistent()
+            .get(&DataKey::YieldClaimDelegate(investor))
+    }
+
+    fn set_yield_claim_delegate(&self, investor: Address, delegate: Address) {
+        self.env
+            .storage()
+            .persistent()
+            .set(&DataKey::YieldClaimDelegate(investor), &delegate);
+    }
+
+    fn get_yield_claim_delegate_revoked(&self, investor: Address) -> bool {
+        self.env
+            .storage()
+            .persistent()
+            .get(&DataKey::YieldClaimDelegateRevoked(investor))
+            .unwrap_or(false)
+    }
+
+    fn set_yield_claim_delegate_revoked(&self, investor: Address, revoked: bool) {
+        self.env
+            .storage()
+            .persistent()
+            .set(&DataKey::YieldClaimDelegateRevoked(investor), &revoked);
+    }
+}
+
+trait PerInvestorStorageExt {
+    fn per_investor(&self) -> PerInvestorStorage;
+}
+
+impl PerInvestorStorageExt for Env {
+    fn per_investor(&self) -> PerInvestorStorage {
+        PerInvestorStorage::new(self)
+    }
+}
+
 pub mod external_calls;
 pub mod validation;
 
@@ -2726,102 +2864,68 @@ impl LiquifactEscrow {
         log
     }
 
-    // --- Persistent per-investor storage helpers ---
     fn get_persistent_investor_contribution(env: &Env, investor: Address) -> i128 {
-        env.storage()
-            .persistent()
-            .get(&DataKey::InvestorContribution(investor))
-            .unwrap_or(0)
+        PerInvestorStorage::new(env).get_contribution(investor)
     }
 
     fn set_persistent_investor_contribution(env: &Env, investor: Address, amount: i128) {
-        env.storage()
-            .persistent()
-            .set(&DataKey::InvestorContribution(investor), &amount);
+        env.per_investor().set_contribution(investor, amount);
     }
 
     fn get_persistent_investor_effective_yield(env: &Env, investor: Address) -> Option<i64> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::InvestorEffectiveYield(investor))
+        env.per_investor().get_effective_yield(investor)
     }
 
     fn set_persistent_investor_effective_yield(env: &Env, investor: Address, value: i64) {
-        env.storage()
-            .persistent()
-            .set(&DataKey::InvestorEffectiveYield(investor), &value);
+        env.per_investor().set_effective_yield(investor, value);
     }
 
     fn get_persistent_investor_claim_not_before(env: &Env, investor: Address) -> u64 {
-        env.storage()
-            .persistent()
-            .get(&DataKey::InvestorClaimNotBefore(investor))
-            .unwrap_or(0)
+        env.per_investor().get_claim_not_before(investor)
     }
 
     fn set_persistent_investor_claim_not_before(env: &Env, investor: Address, value: u64) {
-        env.storage()
-            .persistent()
-            .set(&DataKey::InvestorClaimNotBefore(investor), &value);
+        env.per_investor().set_claim_not_before(investor, value);
     }
 
     fn get_persistent_investor_lock_in_until(env: &Env, investor: Address) -> u64 {
-        env.storage()
-            .persistent()
-            .get(&DataKey::InvestorLockInUntil(investor))
-            .unwrap_or(0)
+        env.per_investor().get_lock_in_until(investor)
     }
 
     fn set_persistent_investor_lock_in_until(env: &Env, investor: Address, value: u64) {
-        env.storage()
-            .persistent()
-            .set(&DataKey::InvestorLockInUntil(investor), &value);
+        env.per_investor().set_lock_in_until(investor, value);
     }
 
     fn get_persistent_investor_claimed(env: &Env, investor: Address) -> bool {
-        env.storage()
-            .persistent()
-            .get(&DataKey::InvestorClaimed(investor))
-            .unwrap_or(false)
+        env.per_investor().get_claimed(investor)
     }
 
     fn set_persistent_investor_claimed(env: &Env, investor: Address, value: bool) {
-        env.storage()
-            .persistent()
-            .set(&DataKey::InvestorClaimed(investor), &value);
+        env.per_investor().set_claimed(investor, value);
     }
 
-    /// Read the delegated address for an investor's yield claim, if set.
-    /// **Persistent** storage. Absent ⇒ `None` (no delegation).
+    fn get_persistent_investor_allowlisted(env: &Env, investor: Address) -> bool {
+        env.per_investor().get_allowlisted(investor)
+    }
+
+    fn set_persistent_investor_allowlisted(env: &Env, investor: Address, allowed: bool) {
+        env.per_investor().set_allowlisted(investor, allowed);
+    }
+
     fn get_persistent_yield_claim_delegate(env: &Env, investor: Address) -> Option<Address> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::YieldClaimDelegate(investor.clone()))
+        env.per_investor().get_yield_claim_delegate(investor)
     }
 
-    /// Set the delegated address for an investor's yield claim.
-    /// **Persistent** storage.
     fn set_persistent_yield_claim_delegate(env: &Env, investor: Address, delegate: Address) {
-        env.storage()
-            .persistent()
-            .set(&DataKey::YieldClaimDelegate(investor), &delegate);
+        env.per_investor().set_yield_claim_delegate(investor, delegate)
     }
 
-    /// Check whether a delegation has been explicitly revoked.
-    /// **Persistent** storage. Absent ⇒ `false` (not revoked or never delegated).
     fn get_persistent_yield_claim_delegate_revoked(env: &Env, investor: Address) -> bool {
-        env.storage()
-            .persistent()
-            .get(&DataKey::YieldClaimDelegateRevoked(investor))
-            .unwrap_or(false)
+        env.per_investor().get_yield_claim_delegate_revoked(investor)
     }
 
-    /// Mark a delegation as revoked.
-    /// **Persistent** storage.
     fn set_persistent_yield_claim_delegate_revoked(env: &Env, investor: Address, revoked: bool) {
-        env.storage()
-            .persistent()
-            .set(&DataKey::YieldClaimDelegateRevoked(investor), &revoked);
+        env.per_investor().set_yield_claim_delegate_revoked(investor, revoked);
     }
 
     /// Verify that a delegation is valid (exists and is not revoked).
@@ -3454,9 +3558,7 @@ impl LiquifactEscrow {
     /// Add or remove an investor from the allowlist.
     pub fn set_investor_allowlisted(env: Env, investor: Address, allowed: bool) {
         let escrow = Self::load_escrow_require_admin(&env);
-        env.storage()
-            .persistent()
-            .set(&DataKey::InvestorAllowlisted(investor.clone()), &allowed);
+        Self::set_persistent_investor_allowlisted(&env, investor.clone(), allowed);
 
         InvestorAllowlistChanged {
             name: symbol_short!("al_set"),
@@ -3493,9 +3595,7 @@ impl LiquifactEscrow {
         // Iterate and perform per-address persistent storage write and event emission.
         for i in 0..n {
             let inv = investors.get(i).unwrap();
-            env.storage()
-                .persistent()
-                .set(&DataKey::InvestorAllowlisted(inv.clone()), &allowed);
+            Self::set_persistent_investor_allowlisted(&env, inv.clone(), allowed);
 
             InvestorAllowlistChanged {
                 name: symbol_short!("al_set"),
@@ -3508,10 +3608,7 @@ impl LiquifactEscrow {
     }
 
     pub fn is_investor_allowlisted(env: Env, investor: Address) -> bool {
-        env.storage()
-            .persistent()
-            .get(&DataKey::InvestorAllowlisted(investor))
-            .unwrap_or(false)
+        Self::get_persistent_investor_allowlisted(&env, investor)
     }
 
     /// Convenience alias for [`LiquifactEscrow::set_legal_hold`] with `active = false`.
