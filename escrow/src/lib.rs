@@ -588,7 +588,7 @@ pub struct InvoiceEscrow {
     pub funding_target: i128,
     pub funded_amount: i128,
     pub yield_bps: i64,
-    pub maturity: u64,
+    pub maturity: u32,
     /// 0 = open, 1 = funded, 2 = settled, 3 = withdrawn (SME pulled liquidity), 4 = cancelled (admin-gated; investors may refund), 5 = archived (admin-gated; read-only terminal)
     pub status: u32,
 }
@@ -616,7 +616,7 @@ pub struct InvoiceEscrow {
 pub struct SmeCollateralCommitment {
     pub asset: Symbol,
     pub amount: i128,
-    pub recorded_at: u64,
+    pub recorded_at: u32,
 }
 
 /// Incremental state change record for delta-encoded snapshots.
@@ -629,13 +629,13 @@ pub struct SnapshotDelta {
     /// Unique ID of this delta (monotonically increasing).
     pub delta_id: u32,
     /// Ledger timestamp when this delta was recorded.
-    pub recorded_at: u64,
+    pub recorded_at: u32,
     /// Previous delta ID this one is based on (0 for baseline/first delta).
     pub based_on_delta_id: u32,
     /// Change in funded amount (signed; may be negative for reversals).
     pub funded_amount_delta: i128,
     /// New maturity value (0 if unchanged).
-    pub maturity: u64,
+    pub maturity: u32,
     /// New status (255 if unchanged).
     pub status: u8,
     /// New admin address (None if unchanged).
@@ -650,7 +650,7 @@ pub struct SnapshotDelta {
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
 pub struct YieldTier {
-    pub min_lock_secs: u64,
+    pub min_lock_secs: u32,
     pub yield_bps: i64,
 }
 
@@ -666,7 +666,7 @@ pub struct FundingCloseSnapshot {
     /// including over-funding past target.
     pub total_principal: i128,
     pub funding_target: i128,
-    pub closed_at_ledger_timestamp: u64,
+    pub closed_at_ledger_timestamp: u32,
     pub closed_at_ledger_sequence: u32,
 }
 
@@ -716,7 +716,7 @@ pub struct TokenMetadataCache {
     /// Token decimal places (e.g., 7 for Stellar USDC)
     pub decimals: u32,
     /// Ledger timestamp when cache was written (for staleness detection)
-    pub cached_at_ledger_timestamp: u64,
+    pub cached_at_ledger_timestamp: u32,
     /// Ledger sequence when cache was written (for staleness detection)
     pub cached_at_ledger_sequence: u32,
 }
@@ -781,8 +781,8 @@ pub enum SettlementNftSnapshot {
 #[derive(Clone, Debug, PartialEq)]
 pub struct DisputePauseState {
     pub ticket_id: String,
-    pub paused_at_ledger_timestamp: u64,
-    pub expires_at_ledger_timestamp: u64,
+    pub paused_at_ledger_timestamp: u32,
+    pub expires_at_ledger_timestamp: u32,
 }
 
 // --- Events ---
@@ -833,7 +833,7 @@ pub struct EscrowFunded {
     pub investor_effective_yield_bps: i64,
     /// The `min_lock_secs` of the matched [`YieldTier`] (0 when base yield applies — no tier,
     /// no lock commitment, or simple fund). See [`LiquifactEscrow::effective_yield_for_commitment`].
-    pub tier_lock_secs: u64,
+    pub tier_lock_secs: u32,
 }
 
 /// Emitted by [`LiquifactEscrow::rotate_beneficiary`] when the SME (beneficiary)
@@ -865,9 +865,9 @@ pub struct EscrowSettled {
     pub invoice_id: Symbol,
     pub funded_amount: i128,
     pub yield_bps: i64,
-    pub maturity: u64,
+    pub maturity: u32,
     /// Ledger timestamp at which the settlement occurred.
-    pub settled_at_ledger_timestamp: u64,
+    pub settled_at_ledger_timestamp: u32,
 }
 
 #[contractevent]
@@ -879,9 +879,9 @@ pub struct EscrowPartiallySettled {
     pub funded_amount: i128,
     pub settled_amount: i128,
     pub yield_bps: i64,
-    pub maturity: u64,
+    pub maturity: u32,
     /// Ledger timestamp at which the partial settlement occurred.
-    pub settled_at_ledger_timestamp: u64,
+    pub settled_at_ledger_timestamp: u32,
 }
 
 #[contractevent]
@@ -890,8 +890,8 @@ pub struct MaturityUpdatedEvent {
     pub name: Symbol,
     #[topic]
     pub invoice_id: Symbol,
-    pub old_maturity: u64,
-    pub new_maturity: u64,
+    pub old_maturity: u32,
+    pub new_maturity: u32,
 }
 
 #[contractevent]
@@ -942,7 +942,7 @@ pub struct LegalHoldClearRequested {
     #[topic]
     pub invoice_id: Symbol,
     /// Inclusive ledger timestamp when clearing may occur.
-    pub clearable_at: u64,
+    pub clearable_at: u32,
 }
 
 /// Emitted when a dispute pause is activated or resumed on an escrow.
@@ -967,8 +967,8 @@ pub struct DisputePausedEvt {
     pub ticket_id: String,
     /// `1` = paused, `0` = resumed.
     pub action: u32,
-    pub paused_at: u64,
-    pub expires_at: u64,
+    pub paused_at: u32,
+    pub expires_at: u32,
 }
 
 /// SME collateral commitment metadata recorded.
